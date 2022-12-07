@@ -28,3 +28,7 @@ func (s *Set[T]) Intersection(other *Set[T]) (ret *Set[T]) {
 	}
 	return
 }
+
+func (s *Set[T]) Size() int {
+	return len(*s)
+}

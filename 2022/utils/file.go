@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"io"
 	"os"
 )
 
@@ -15,6 +16,19 @@ func OpenFile(path string) *File {
 	HandleError(err)
 	scanner := bufio.NewScanner(file)
 	return &File{file, scanner}
+}
+
+func (f *File) ReadChar(char *string) bool {
+	buffer := make([]byte, 1)
+	_, err := f.file.Read(buffer)
+
+	if err == io.EOF {
+		return false
+	}
+	HandleError(err)
+
+	*char = string(buffer)
+	return true
 }
 
 func (f *File) ReadLine(buffer *string) (ok bool) {
