@@ -10,7 +10,7 @@ const path = "./test"
 
 func main() {
 	partOne()
-	// partTwo()
+	partTwo()
 }
 
 // *** Part One ***
