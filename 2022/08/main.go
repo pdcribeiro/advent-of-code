@@ -28,6 +28,13 @@ func partOne() {
 // *** Part Two ***
 
 func partTwo() {
+	file := utils.OpenFile(path)
+	defer file.Close()
+
+	grid := loadGrid(file)
+	result := maxScore(grid)
+
+	fmt.Println(result)
 }
 
 // *** Helpers ***
@@ -39,6 +46,7 @@ type grid [][]tree
 type tree struct {
 	height  int
 	visible bool
+	views   []int
 }
 
 func loadGrid(file *utils.File) *grid {
@@ -49,7 +57,8 @@ func loadGrid(file *utils.File) *grid {
 		trees = append(trees, make([]tree, len(line)))
 		for j, char := range line {
 			height := utils.GetNumber(string(char))
-			trees[i][j] = tree{height, false}
+			views := []int{-1, -1, -1, -1}
+			trees[i][j] = tree{height, false, views}
 		}
 	}
 	return &trees
@@ -137,4 +146,98 @@ func (grid *grid) print() {
 		fmt.Println()
 	}
 	fmt.Println()
+}
+
+func maxScore(grid *grid) int {
+	grid.setViews(xAxis)
+	grid.setViews(yAxis)
+	return grid.maxViewScore()
+}
+
+func (grid *grid) setViews(axis int) {
+	iterate := iterator(len(*grid))
+	iterate(false, func(i int) {
+		reverse := false
+		iterate(reverse, func(j int) {
+			for k := j - 1; k >= 0; k-- {
+				updateView(grid, i, j, k, axis, reverse)
+			}
+		})
+	})
+	iterate(false, func(i int) {
+		reverse := true
+		iterate(reverse, func(j int) {
+			for k := j + 1; k < len(*grid); k++ {
+				updateView(grid, i, j, k, axis, reverse)
+			}
+		})
+	})
+}
+
+func updateView(grid *grid, i, j, k, axis int, reverse bool) {
+	tree := grid.tree(i, k, axis)
+	blocker := grid.tree(i, j, axis)
+	view := tree.view(axis, reverse)
+	if wasUpdated(view) {
+		return
+	}
+	if blocker.hides(tree) || blockerAtEdge(grid, j, reverse) {
+		*view = utils.Abs(j - k)
+	}
+}
+
+func (tree *tree) view(axis int, reverse bool) *int {
+	d := direction(axis, reverse)
+	return &tree.views[d]
+}
+
+func direction(axis int, reverse bool) (d int) {
+	d = 0
+	if axis == yAxis {
+		d += 1
+	}
+	if reverse {
+		d += 2
+	}
+	return
+}
+
+func wasUpdated(view *int) bool {
+	return *view > -1
+}
+
+func (t *tree) hides(other *tree) bool {
+	return t.height >= other.height
+}
+
+func blockerAtEdge(grid *grid, index int, reverse bool) bool {
+	if reverse {
+		return index == 0
+	} else {
+		return index == len(*grid)-1
+	}
+}
+
+func (grid *grid) maxViewScore() (max int) {
+	iterate := iterator(len(*grid))
+	iterate(false, func(i int) {
+		iterate(false, func(j int) {
+			score := grid.tree(i, j, xAxis).score()
+			if score > max {
+				max = score
+			}
+		})
+	})
+	return
+}
+
+func (tree *tree) score() (score int) {
+	score = 1
+	for _, view := range tree.views {
+		if view == -1 {
+			view = 0
+		}
+		score *= view
+	}
+	return
 }
